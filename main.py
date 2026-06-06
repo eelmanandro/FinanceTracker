@@ -1,8 +1,9 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout,QHBoxLayout, QWidget,QComboBox,QLineEdit, QCalendarWidget, QTextEdit, QLabel, QTreeWidget, QTreeWidgetItem
-from PyQt5.QtGui import QDoubleValidator
+from PyQt5.QtGui import QDoubleValidator, QIcon
 from PyQt5.QtCore import Qt, QDate
 import sys
 import json
+import os
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -14,6 +15,10 @@ class MainWindow(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         layout = QHBoxLayout(central_widget)
+        if hasattr(sys, "_MEIPASS"):
+            self.setWindowIcon(QIcon(os.path.join(sys._MEIPASS, "finance-icon.ico")))
+        else:
+            self.setWindowIcon(QIcon("finance-icon.ico"))
 
         # Create buttons
         col1 = QVBoxLayout()
