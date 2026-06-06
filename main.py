@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout,QHBoxLayout, QWidget,QComboBox,QLineEdit, QCalendarWidget, QTextEdit, QLabel
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout,QHBoxLayout, QWidget,QComboBox,QLineEdit, QCalendarWidget, QTextEdit, QLabel, QTreeWidget, QTreeWidgetItem
 from PyQt5.QtGui import QDoubleValidator
 from PyQt5.QtCore import Qt, QDate
 import sys
@@ -8,7 +8,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Finance Tracker")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 1200, 600)
 
         # Create a central widget and layout
         central_widget = QWidget()
@@ -18,13 +18,20 @@ class MainWindow(QMainWindow):
         # Create buttons
         col1 = QVBoxLayout()
         col2 = QVBoxLayout()
+        self.transaction_tree = QTreeWidget()
+        self.transaction_tree.setColumnCount(5)
+        self.transaction_tree.setHeaderLabels(["ID", "Дата", "Тип", "Категорія", "Сума"])
+        self.transaction_tree.setColumnWidth(0, 50)
+        col1.addWidget(QLabel("Історія транзакцій"))
+        col1.addWidget(self.transaction_tree)
         self.transaction_type = QComboBox()
         self.transaction_type.addItems(["Income", "Expense"])
         self.amount_input = QLineEdit()
         validator = QDoubleValidator(0.00, 999999.99, 2)
         self.amount_input.setValidator(validator)
         self.amount_input.setPlaceholderText("Введіть суму транзакції")
-        self.add_button = QPushButton("Add Transaction")       
+        self.add_button = QPushButton("Додати транзакцію")
+        self.del_button = QPushButton("Видалити транзакцію")
         self.transaction_category = QLineEdit()
         self.transaction_category.setPlaceholderText("Введіть категорію транзакції")
         self.transaction_date = QCalendarWidget()
@@ -50,7 +57,9 @@ class MainWindow(QMainWindow):
         col2.addWidget(self.transaction_description_label)
         col2.addWidget(self.transaction_description)
         col2.addWidget(self.add_button)
+        col2.addWidget(self.del_button)
         self.add_button.clicked.connect(self.add_transaction)
+        self.del_button.clicked.connect(self.delete_transaction)
 
         # Add columns to main layout
         layout.addLayout(col1, stretch = 70)
@@ -58,6 +67,7 @@ class MainWindow(QMainWindow):
 
         self.transactions_filename = "transactions.json"
         self.transactions = self.load_transactions()
+        self.update_transaction_list()
 
     def get_data(self):
         transaction_type = self.transaction_type.currentText()
@@ -99,12 +109,37 @@ class MainWindow(QMainWindow):
         with open(self.transactions_filename, "w") as file:
             json.dump(self.transactions, file, ensure_ascii=False, indent=2)
         self.clear_inputs()
+        self.update_transaction_list()
+
+    def delete_transaction(self):
+        selected_items = self.transaction_tree.selectedItems()
+        if not selected_items:
+            return
+        selected_item = selected_items[0]
+        transaction_id = selected_item.text(0)
+        if transaction_id in self.transactions:
+            del self.transactions[transaction_id]
+            with open(self.transactions_filename, "w") as file:
+                json.dump(self.transactions, file, ensure_ascii=False, indent=2)
+            self.update_transaction_list()
 
     def sort_transactions(self):
         def get_num_key(transaction):
             return int(transaction[0])
         sorted_transactions = sorted(self.transactions.items(), key=get_num_key)
         return sorted_transactions
+    
+    def update_transaction_list(self):
+        self.transaction_tree.clear()
+        for id, transaction in self.transactions.items():
+            item = QTreeWidgetItem([
+                id,
+                transaction.get("date", ""),
+                transaction.get("type", ""),
+                transaction.get("category", ""),
+                transaction.get("amount", "")
+            ])
+            self.transaction_tree.addTopLevelItem(item)
     
     def clear_inputs(self):
         self.amount_input.clear()
